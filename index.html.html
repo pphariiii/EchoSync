@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EchoSync</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@200;300;400&family=Newsreader:ital,wght@1,300;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{
+  width:100%;height:100%;background:#F2EDE6;overflow:hidden;
+  font-family:'DM Sans',sans-serif;
+  user-select:none;-webkit-user-select:none;
+  transition:background 2.2s ease;
+}
+.screen{
+  position:fixed;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity 0.9s ease;
+}
+.screen.active{opacity:1;pointer-events:all;}
+
+/* INTRO */
+#s-intro{gap:14px;}
+#intro-logo{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(26px,5vw,42px);font-weight:300;
+  letter-spacing:0.32em;color:rgba(0,0,0,0.32);text-transform:uppercase;
+}
+#intro-sub{
+  font-weight:200;font-size:10px;letter-spacing:0.26em;
+  color:rgba(0,0,0,0.18);text-transform:uppercase;
+}
+#intro-btn{
+  margin-top:30px;padding:12px 42px;border-radius:40px;
+  border:1px solid rgba(0,0,0,0.14);background:transparent;cursor:pointer;
+  font-family:'DM Sans',sans-serif;font-weight:300;font-size:10px;
+  letter-spacing:0.24em;color:rgba(0,0,0,0.38);text-transform:uppercase;
+  transition:all 0.3s;
+}
+#intro-btn:hover{background:rgba(0,0,0,0.05);color:rgba(0,0,0,0.6);}
+
+/* TAP SCREEN */
+#s-tap{cursor:crosshair;}
+#bg-word{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(60px,16vw,140px);font-weight:600;
+  letter-spacing:0.07em;text-transform:uppercase;
+  color:rgba(0,0,0,0.04);opacity:1;
+  pointer-events:none;white-space:nowrap;line-height:1;
+  transition:opacity 1.4s ease,color 2s ease;
+}
+
+/* Timer */
+#timer-wrap{
+  position:fixed;top:26px;left:50%;transform:translateX(-50%);
+  opacity:0;transition:opacity 1s;pointer-events:none;z-index:20;
+}
+#timer-container{position:relative;width:54px;height:54px;}
+#timer-svg{width:54px;height:54px;}
+#timer-num{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:300;
+  color:rgba(0,0,0,0.38);letter-spacing:0.03em;
+}
+
+/* Info bar */
+#info-bar{
+  position:fixed;bottom:32px;left:0;right:0;
+  display:flex;justify-content:center;gap:clamp(26px,7vw,68px);
+  opacity:0;transition:opacity 1.2s;pointer-events:none;z-index:20;
+}
+.iv{text-align:center;}
+.iv-n{
+  font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:400;
+  color:rgba(0,0,0,0.42);line-height:1;min-height:20px;
+}
+.iv-k{
+  font-weight:300;font-size:8px;letter-spacing:0.22em;
+  color:rgba(0,0,0,0.2);margin-top:5px;text-transform:uppercase;
+}
+#mood-dots{
+  display:flex;gap:5px;align-items:center;justify-content:center;height:20px;
+}
+.md{
+  width:4px;height:4px;border-radius:50%;background:rgba(0,0,0,0.2);
+  animation:mdp 1.5s ease-in-out infinite;
+}
+.md:nth-child(2){animation-delay:0.25s;}
+.md:nth-child(3){animation-delay:0.5s;}
+@keyframes mdp{
+  0%,100%{opacity:0.12;transform:scale(1);}
+  50%{opacity:0.45;transform:scale(1.5);}
+}
+
+/* Melody bars */
+#melody-bar{
+  position:fixed;top:88px;left:50%;transform:translateX(-50%);
+  display:flex;gap:3px;align-items:flex-end;height:20px;
+  opacity:0;transition:opacity 0.4s;pointer-events:none;z-index:20;
+}
+.mb,.rmb{width:2.5px;border-radius:2px;animation:mba ease-in-out infinite alternate;}
+@keyframes mba{0%{height:3px;}100%{height:19px;}}
+
+/* RESULT */
+#s-result{gap:0;padding:32px 24px;text-align:center;}
+#r-mood{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(46px,12vw,88px);font-weight:600;
+  letter-spacing:0.08em;text-transform:uppercase;line-height:1;
+  opacity:0;animation:fiu 1.2s ease 0.1s forwards;
+}
+#r-sublabel{
+  font-weight:200;font-size:9px;letter-spacing:0.3em;
+  color:rgba(0,0,0,0.28);text-transform:uppercase;margin-top:10px;
+  opacity:0;animation:fiu 1s ease 0.5s forwards;
+}
+#r-stats{
+  display:flex;gap:32px;margin-top:22px;justify-content:center;
+  opacity:0;animation:fiu 1s ease 0.8s forwards;
+}
+.rs{text-align:center;}
+.rs-n{
+  font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:400;
+  color:rgba(0,0,0,0.42);line-height:1;
+}
+.rs-k{
+  font-size:8px;font-weight:300;letter-spacing:0.2em;
+  color:rgba(0,0,0,0.2);margin-top:4px;text-transform:uppercase;
+}
+#r-line{
+  width:36px;height:1px;background:rgba(0,0,0,0.1);
+  margin:26px auto 0;opacity:0;animation:fi 1s ease 1.0s forwards;
+}
+#r-comfort{
+  max-width:360px;margin-top:20px;
+  opacity:0;animation:fiu 1.2s ease 1.2s forwards;
+}
+#r-comfort-title{
+  font-family:'Newsreader',serif;font-style:italic;
+  font-size:clamp(15px,3.2vw,20px);font-weight:300;
+  line-height:1.55;white-space:pre-line;
+}
+#r-comfort-body{
+  margin-top:12px;font-weight:300;font-size:11px;
+  line-height:1.9;letter-spacing:0.03em;color:rgba(0,0,0,0.36);
+}
+#r-melody{
+  display:flex;gap:3px;align-items:flex-end;height:20px;
+  margin-top:26px;justify-content:center;
+  opacity:0;animation:fi 1s ease 1.8s forwards;
+}
+#r-retry{
+  margin-top:28px;padding:10px 32px;border-radius:40px;
+  border:1px solid rgba(0,0,0,0.11);background:transparent;cursor:pointer;
+  font-family:'DM Sans',sans-serif;font-weight:300;font-size:10px;
+  letter-spacing:0.22em;color:rgba(0,0,0,0.32);text-transform:uppercase;
+  transition:all 0.3s;opacity:0;animation:fiu 1s ease 2.1s forwards;
+}
+#r-retry:hover{background:rgba(0,0,0,0.05);color:rgba(0,0,0,0.55);}
+@keyframes fiu{0%{opacity:0;transform:translateY(12px);}100%{opacity:1;transform:translateY(0);}}
+@keyframes fi{0%{opacity:0;}100%{opacity:1;}}
+
+/* Ambient */
+.amb{
+  position:fixed;border-radius:50%;pointer-events:none;
+  background:rgba(0,0,0,0.22);animation:tw linear infinite;
+}
+@keyframes tw{0%,100%{opacity:0.04;}50%{opacity:0.18;}}
+
+/* Particles */
+.star-p{
+  position:fixed;pointer-events:none;
+  background:rgba(255,252,215,0.92);border-radius:1px;
+  animation:sf linear forwards;
+}
+@keyframes sf{
+  0%{opacity:1;transform:translate(-50%,-50%) rotate(45deg) scale(1);}
+  70%{opacity:0.55;}
+  100%{opacity:0;transform:translate(var(--tx),var(--ty)) rotate(45deg) scale(0);}
+}
+.dot-p{
+  position:fixed;pointer-events:none;border-radius:50%;
+  background:rgba(255,250,200,0.85);animation:df linear forwards;
+}
+@keyframes df{
+  0%{opacity:0.88;transform:translate(-50%,-50%);}
+  100%{opacity:0;transform:translate(var(--tx),var(--ty));}
+}
+.rpl{
+  position:fixed;border-radius:50%;pointer-events:none;
+  transform:translate(-50%,-50%);border-style:solid;
+  animation:ro ease-out forwards;
+}
+@keyframes ro{0%{width:0;height:0;opacity:0.75;}100%{width:480px;height:480px;opacity:0;}}
+.rpl2{
+  position:fixed;border-radius:50%;pointer-events:none;
+  transform:translate(-50%,-50%);border-style:solid;
+  animation:ro2 ease-out forwards;
+}
+@keyframes ro2{0%{width:0;height:0;opacity:0.5;}100%{width:220px;height:220px;opacity:0;}}
+</style>
+</head>
+<body>
+
+<div id="s-intro" class="screen active">
+  <div id="intro-logo">EchoSync</div>
+  <div id="intro-sub">tap your emotion for 20 seconds</div>
+  <button id="intro-btn">Begin</button>
+</div>
+
+<div id="s-tap" class="screen">
+  <div id="bg-word">·</div>
+  <div id="timer-wrap">
+    <div id="timer-container">
+      <svg id="timer-svg" viewBox="0 0 54 54">
+        <circle cx="27" cy="27" r="22" fill="none" stroke="rgba(0,0,0,0.07)" stroke-width="1.5"/>
+        <circle id="t-ring" cx="27" cy="27" r="22" fill="none"
+          stroke="rgba(0,0,0,0.2)" stroke-width="1.5"
+          stroke-dasharray="138.2" stroke-dashoffset="0"
+          stroke-linecap="round" transform="rotate(-90 27 27)"
+          style="transition:stroke-dashoffset 1s linear,stroke 1.5s ease;"/>
+      </svg>
+      <div id="timer-num">20</div>
+    </div>
+  </div>
+  <div id="melody-bar"></div>
+  <div id="info-bar">
+    <div class="iv"><div class="iv-n" id="v-bpm">—</div><div class="iv-k">BPM</div></div>
+    <div class="iv">
+      <div id="mood-dots"><div class="md"></div><div class="md"></div><div class="md"></div></div>
+      <div class="iv-k">MOOD</div>
+    </div>
+    <div class="iv"><div class="iv-n" id="v-taps">0</div><div class="iv-k">TAPS</div></div>
+  </div>
+</div>
+
+<div id="s-result" class="screen">
+  <div id="r-mood">—</div>
+  <div id="r-sublabel">your emotion right now</div>
+  <div id="r-stats">
+    <div class="rs"><div class="rs-n" id="r-bpm">—</div><div class="rs-k">avg BPM</div></div>
+    <div class="rs"><div class="rs-n" id="r-taps">—</div><div class="rs-k">taps</div></div>
+  </div>
+  <div id="r-line"></div>
+  <div id="r-comfort">
+    <div id="r-comfort-title"></div>
+    <div id="r-comfort-body"></div>
+  </div>
+  <div id="r-melody"></div>
+  <button id="r-retry">Tap again</button>
+</div>
+
+<script>
+const MOODS={
+  lonely:    {label:'LONELY',    bg:'#CFD8EB',acc:'#3a5080',ripple:'rgba(140,165,215,0.5)'},
+  sad:       {label:'SAD',       bg:'#D8DFF0',acc:'#5560a0',ripple:'rgba(160,180,230,0.5)'},
+  peaceful:  {label:'PEACEFUL',  bg:'#E8F0E0',acc:'#4a7040',ripple:'rgba(155,205,148,0.45)'},
+  calm:      {label:'CALM',      bg:'#DDE8F0',acc:'#4a6fa5',ripple:'rgba(175,208,242,0.55)'},
+  nostalgic: {label:'NOSTALGIC', bg:'#EDE8E0',acc:'#7a6a50',ripple:'rgba(198,183,152,0.5)'},
+  flow:      {label:'FLOW',      bg:'#D8F0E8',acc:'#2a7a5a',ripple:'rgba(115,207,172,0.5)'},
+  happy:     {label:'HAPPY',     bg:'#F5F0D5',acc:'#8a8020',ripple:'rgba(228,218,128,0.55)'},
+  excited:   {label:'EXCITED',   bg:'#F5EAD0',acc:'#a07020',ripple:'rgba(238,198,98,0.55)'},
+  anxious:   {label:'ANXIOUS',   bg:'#EDE0F2',acc:'#7a4a9a',ripple:'rgba(198,168,228,0.55)'},
+  frustrated:{label:'FRUSTRATED',bg:'#F0E0D0',acc:'#b05020',ripple:'rgba(218,158,108,0.55)'},
+  angry:     {label:'ANGRY',     bg:'#F0D8D5',acc:'#a03030',ripple:'rgba(218,128,118,0.6)'},
+};
+const COMFORT={
+  lonely:    {title:'"Even in the quietest moments,\nyou are not truly alone."',body:'Loneliness is a signal, not a sentence. It means you are someone who values connection — and that\'s a beautiful thing. Take a breath. Reach out to one person today, even just a short message.'},
+  sad:       {title:'"Sadness is just love\nwith nowhere to go."',body:'It\'s okay to feel heavy sometimes. Your feelings are valid, and they will not stay forever. Be gentle with yourself today — you deserve the same kindness you give to others.'},
+  peaceful:  {title:'"You have found your stillness.\nHold onto it."',body:'This calm is yours. You created it. Carry this feeling with you as you move through your day — it is always available to you, even when things feel uncertain.'},
+  calm:      {title:'"A calm mind is\nthe greatest gift."',body:'You are in balance. This is a good moment to think clearly, make decisions, or simply appreciate where you are. Trust yourself today — your instincts are grounded.'},
+  nostalgic: {title:'"The past made you.\nYou are still becoming."',body:'Nostalgia reminds us of who we are at our roots. Let the memories bring warmth, not weight. You carry the best of those moments with you — they live in how you love and what you notice.'},
+  flow:      {title:'"You are exactly where\nyou are meant to be."',body:'Something is working. Stay in this rhythm — don\'t overthink it. Flow states are rare and precious. Trust the current you\'re already in.'},
+  happy:     {title:'"Let this joy be\nfully yours today."',body:'Don\'t minimize this feeling. You deserve to feel good. Share this energy — joy is one of the few things that grows when you give it away.'},
+  excited:   {title:'"That spark in you?\nDon\'t let it wait."',body:'You have energy to give the world right now. Channel it into something that matters to you. This momentum is a gift — start the thing you\'ve been putting off.'},
+  anxious:   {title:'"Your nervous system\nis trying to protect you."',body:'Anxiety means something matters to you. You are not broken — you are responding. Try breathing in for 4 counts, hold for 4, out for 6. You are safe in this moment.'},
+  frustrated:{title:'"Frustration means you care\nand you haven\'t given up."',body:'The things that frustrate us most are often the things we want most. That energy is trying to tell you something. What is it asking you to change — or release?'},
+  angry:     {title:'"Anger is energy.\nYou get to choose its direction."',body:'Something crossed a boundary you care about. That anger is valid. Let it move through you — breathe, shake it out, take a walk. Then decide, calmly, what needs to change.'},
+};
+const SCALES={
+  lonely:[220,246.94,261.63,293.66,329.63,349.23,392,440],
+  sad:[261.63,277.18,311.13,349.23,369.99,415.3,466.16,523.25],
+  peaceful:[261.63,311.13,349.23,392,415.3,466.16,523.25,554.37],
+  calm:[261.63,293.66,329.63,349.23,392,440,493.88,523.25],
+  nostalgic:[293.66,329.63,349.23,392,440,466.16,523.25,554.37],
+  flow:[349.23,392,440,493.88,523.25,587.33,659.25,698.46],
+  happy:[293.66,329.63,369.99,392,440,493.88,554.37,587.33],
+  excited:[329.63,369.99,415.3,466.16,523.25,587.33,659.25,698.46],
+  anxious:[246.94,277.18,311.13,369.99,415.3,466.16,523.25,554.37],
+  frustrated:[196,220,233.08,261.63,293.66,311.13,349.23,392],
+  angry:[130.81,146.83,155.56,174.61,196,207.65,233.08,261.63],
+};
+const RHYTHMS={
+  lonely:[0,0.9,2.0,3.2,4.5],sad:[0,0.7,1.4,2.3,3.1],
+  peaceful:[0,0.6,1.2,2.0,2.9,3.8],calm:[0,0.45,0.9,1.5,2.1,2.7],
+  nostalgic:[0,0.5,1.1,1.8,2.6,3.5],flow:[0,0.35,0.7,1.0,1.4,1.8,2.3],
+  happy:[0,0.2,0.4,0.55,0.75,0.95,1.2,1.5],excited:[0,0.15,0.3,0.45,0.6,0.75,0.9,1.1],
+  anxious:[0,0.18,0.36,0.6,0.78,1.05,1.3],frustrated:[0,0.22,0.44,0.7,0.95,1.3,1.7],
+  angry:[0,0.12,0.24,0.38,0.5,0.65,0.8,0.95],
+};
+const MPLAY={
+  lonely:{wave:'triangle',dur:1.8,dir:'down',vol:0.044},
+  sad:{wave:'triangle',dur:1.1,dir:'down',vol:0.050},
+  peaceful:{wave:'sine',dur:1.8,dir:'gentle',vol:0.044},
+  calm:{wave:'sine',dur:1.3,dir:'up',vol:0.054},
+  nostalgic:{wave:'triangle',dur:1.1,dir:'wave',vol:0.048},
+  flow:{wave:'sine',dur:0.75,dir:'up',vol:0.054},
+  happy:{wave:'sine',dur:0.45,dir:'bounce',vol:0.058},
+  excited:{wave:'sine',dur:0.3,dir:'jump',vol:0.058},
+  anxious:{wave:'sawtooth',dur:0.22,dir:'skip',vol:0.048},
+  frustrated:{wave:'sawtooth',dur:0.28,dir:'skip',vol:0.060},
+  angry:{wave:'sawtooth',dur:0.14,dir:'low',vol:0.072},
+};
+
+function noteIdx(dir,i,len){
+  if(dir==='down')return len-1-(i%len);
+  if(dir==='skip')return(i*3+2)%len;
+  if(dir==='low')return i%Math.ceil(len/2);
+  if(dir==='jump')return Math.min(Math.floor(i*1.3),len-1);
+  if(dir==='bounce')return i%2===0?i%len:(len-1-i%len);
+  if(dir==='gentle')return Math.floor(i*0.7)%len;
+  if(dir==='wave')return Math.round((len/2)+(len/2-1)*Math.sin(i*0.8))%len;
+  return i%len;
+}
+
+let _ac=null;
+function ac(){
+  if(!_ac)_ac=new(window.AudioContext||window.webkitAudioContext)();
+  if(_ac.state==='suspended')_ac.resume();
+  return _ac;
+}
+function playMelody(mood){
+  try{
+    const ctx=ac(),sc=SCALES[mood]||SCALES.calm,rh=RHYTHMS[mood]||RHYTHMS.calm,cfg=MPLAY[mood]||MPLAY.calm;
+    rh.forEach((t,i)=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.type=cfg.wave;o.frequency.value=sc[noteIdx(cfg.dir,i,sc.length)];
+      const s=ctx.currentTime+t;
+      g.gain.setValueAtTime(0,s);g.gain.linearRampToValueAtTime(cfg.vol,s+0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001,s+cfg.dur);
+      o.start(s);o.stop(s+cfg.dur+0.05);
+    });
+  }catch(e){}
+}
+
+// ambient dots
+for(let i=0;i<40;i++){
+  const s=document.createElement('div');s.className='amb';
+  const z=Math.random()*1.5+0.3;
+  s.style.cssText=`width:${z}px;height:${z}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-duration:${3+Math.random()*6}s;animation-delay:${Math.random()*7}s`;
+  document.body.appendChild(s);
+}
+
+function spawnParticles(x,y,rc){
+  rc=rc||'rgba(255,252,215,0.6)';
+  for(let i=0;i<30;i++){
+    const isStar=i<11,el=document.createElement('div');
+    el.className=isStar?'star-p':'dot-p';
+    const ang=(i/30)*Math.PI*2+(Math.random()-0.5)*0.5;
+    const dist=65+Math.random()*185;
+    const sz=isStar?(3+Math.random()*4.5):(1.5+Math.random()*3);
+    const dur=0.6+Math.random()*1.0;
+    el.style.cssText=`left:${x}px;top:${y}px;width:${sz}px;height:${sz}px;--tx:${Math.cos(ang)*dist-sz/2}px;--ty:${Math.sin(ang)*dist-sz/2}px;animation-duration:${dur}s;`;
+    document.body.appendChild(el);setTimeout(()=>el.remove(),dur*1000+150);
+  }
+  const r1=document.createElement('div');r1.className='rpl';
+  r1.style.cssText=`left:${x}px;top:${y}px;border-width:1.5px;border-color:${rc};animation-duration:1.5s;`;
+  document.body.appendChild(r1);setTimeout(()=>r1.remove(),1600);
+  const r2=document.createElement('div');r2.className='rpl2';
+  r2.style.cssText=`left:${x}px;top:${y}px;border-width:1px;border-color:${rc};animation-duration:1.0s;`;
+  document.body.appendChild(r2);setTimeout(()=>r2.remove(),1100);
+}
+
+function melodyBars(id,mood){
+  const bar=document.getElementById(id);if(!bar)return;
+  bar.innerHTML='';
+  const acc=(MOODS[mood]||{acc:'rgba(0,0,0,0.2)'}).acc;
+  for(let i=0;i<10;i++){
+    const b=document.createElement('div');
+    b.className=id==='melody-bar'?'mb':'rmb';
+    b.style.cssText=`animation-delay:${i*0.07}s;animation-duration:${0.30+Math.random()*0.32}s;background:${acc};opacity:0.38;`;
+    bar.appendChild(b);
+  }
+  if(id==='melody-bar'){bar.style.opacity='1';setTimeout(()=>{bar.style.opacity='0';},4000);}
+}
+
+function detectMood(intervals){
+  if(intervals.length<2)return'calm';
+  const avg=intervals.reduce((a,b)=>a+b)/intervals.length;
+  const bpm=60000/avg;
+  const variance=intervals.reduce((s,v)=>s+Math.abs(v-avg),0)/intervals.length;
+  if(bpm<30)return'lonely';
+  if(bpm<56)return'sad';
+  if(bpm<76)return'peaceful';
+  if(bpm<96)return'calm';
+  if(bpm<116)return'nostalgic';
+  if(bpm<136)return'flow';
+  if(bpm<161)return'happy';
+  if(bpm<186)return'excited';
+  if(bpm<220)return'anxious';
+  return variance>avg*0.35?'angry':'frustrated';
+}
+
+const _fr={};
+function smoothTo(id,target){
+  if(_fr[id])cancelAnimationFrame(_fr[id]);
+  const el=document.getElementById(id);if(!el)return;
+  const from=parseFloat(el.textContent)||0;
+  if(from===target){el.textContent=target;return;}
+  const dur=700,t0=performance.now();
+  function step(now){
+    const p=Math.min((now-t0)/dur,1),e=1-Math.pow(1-p,3);
+    el.textContent=Math.round(from+(target-from)*e);
+    if(p<1)_fr[id]=requestAnimationFrame(step);else el.textContent=target;
+  }
+  _fr[id]=requestAnimationFrame(step);
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s-'+id).classList.add('active');
+}
+
+const DURATION=20;
+let taps=[],tapCount=0,lastTap=0,active=false,ticker=null,moodLog=[];
+
+function startSession(){
+  taps=[];tapCount=0;lastTap=0;moodLog=[];active=false;
+  if(ticker)clearInterval(ticker);
+  let secondsLeft=DURATION;
+  document.getElementById('v-bpm').textContent='—';
+  document.getElementById('v-taps').textContent='0';
+  document.body.style.transition='background 2.2s ease';
+  document.body.style.background='#F2EDE6';
+  const ring=document.getElementById('t-ring');
+  ring.style.stroke='rgba(0,0,0,0.2)';
+  ring.style.strokeDashoffset='0';
+  document.getElementById('timer-num').textContent='20';
+  document.getElementById('timer-wrap').style.opacity='0';
+  document.getElementById('info-bar').style.opacity='0';
+  document.getElementById('melody-bar').style.opacity='0';
+  document.getElementById('melody-bar').innerHTML='';
+  showScreen('tap');
+  setTimeout(()=>{
+    active=true;
+    document.getElementById('timer-wrap').style.opacity='1';
+    document.getElementById('info-bar').style.opacity='1';
+    ticker=setInterval(()=>{
+      secondsLeft--;
+      document.getElementById('timer-num').textContent=secondsLeft;
+      ring.style.strokeDashoffset=(138.2*(DURATION-secondsLeft)/DURATION).toFixed(2);
+      if(secondsLeft<=5)ring.style.stroke='rgba(165,65,65,0.38)';
+      else if(secondsLeft<=10)ring.style.stroke='rgba(150,100,30,0.3)';
+      if(taps.length>=2)moodLog.push(detectMood(taps));
+      if(secondsLeft<=0){clearInterval(ticker);ticker=null;active=false;endSession();}
+    },1000);
+  },500);
+}
+
+function endSession(){
+  let dominant='calm';
+  if(moodLog.length>0){
+    const freq={};
+    moodLog.forEach(m=>{freq[m]=(freq[m]||0)+1;});
+    dominant=Object.keys(freq).reduce((a,b)=>freq[a]>=freq[b]?a:b);
+  }else if(taps.length>=2){
+    dominant=detectMood(taps);
+  }
+  const m=MOODS[dominant]||MOODS.calm;
+  const c=COMFORT[dominant]||COMFORT.calm;
+  const avgBpm=taps.length>1?Math.round(60000/(taps.reduce((a,b)=>a+b)/taps.length)):0;
+
+  document.body.style.transition='background 1.8s ease';
+  document.body.style.background=m.bg;
+
+  const rw=document.getElementById('r-mood');
+  rw.style.animation='none';void rw.offsetWidth;
+  rw.textContent=m.label;rw.style.color=m.acc;rw.style.animation='';
+
+  ['r-sublabel','r-stats','r-line','r-comfort','r-melody','r-retry'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    el.style.animation='none';void el.offsetWidth;el.style.animation='';
+  });
+
+  document.getElementById('r-bpm').textContent=avgBpm||'—';
+  document.getElementById('r-taps').textContent=tapCount;
+  document.getElementById('r-comfort-title').textContent=c.title;
+  document.getElementById('r-comfort-title').style.color=m.acc;
+  document.getElementById('r-comfort-body').textContent=c.body;
+  melodyBars('r-melody',dominant);
+  showScreen('result');
+  setTimeout(()=>playMelody(dominant),500);
+}
+
+function resetSession(){
+  if(ticker)clearInterval(ticker);ticker=null;active=false;
+  document.body.style.transition='background 1.5s ease';
+  document.body.style.background='#F2EDE6';
+  showScreen('intro');
+}
+
+document.getElementById('intro-btn').addEventListener('click',startSession);
+document.getElementById('r-retry').addEventListener('click',resetSession);
+
+document.getElementById('s-tap').addEventListener('pointerdown',function(e){
+  if(!active)return;
+  const x=e.clientX,y=e.clientY,now=Date.now();
+  tapCount++;
+  if(lastTap)taps.push(now-lastTap);
+  if(taps.length>10)taps.shift();
+  lastTap=now;
+  const mood=detectMood(taps);
+  const m=MOODS[mood]||MOODS.calm;
+  document.body.style.transition='background 2.2s ease';
+  document.body.style.background=m.bg;
+  spawnParticles(x,y,m.ripple);
+  setTimeout(function(){playMelody(mood);melodyBars('melody-bar',mood);},100);
+  if(taps.length>1){
+    const bpm=Math.round(60000/(taps.reduce((a,b)=>a+b)/taps.length));
+    smoothTo('v-bpm',bpm);
+  }
+  smoothTo('v-taps',tapCount);
+});
+</script>
+</body>
+</html>
